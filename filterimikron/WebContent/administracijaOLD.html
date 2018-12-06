@@ -1,0 +1,239 @@
+<!DOCTYPE html> 
+<html>
+
+<head>
+	<title>Filteri Mikron</title>
+	<meta name="description" content="website description" />
+	<meta name="keywords" content="website keywords, website keywords" />
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+  	<link rel="stylesheet" type="text/css" href="css/style.css" />
+  	<link rel="stylesheet" type="text/css" href="css/jquery-ui.min.css" />
+  
+  	<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.css" />
+  	<link rel="stylesheet" href="css/map.css" />
+	<!-- modernizr enables HTML5 elements and feature detects -->
+   	<!-- javascript at the bottom for fast page loading -->
+   	<script type="text/javascript" src="js/jquery.js"></script>
+   	<script type="text/javascript" src="js/jquery-ui.min.js"></script>
+   	<script type="text/javascript" src="js/jquery.number.js"></script>
+
+  	<script type="text/javascript" src="js/image_slide.js"></script>
+  	<script type="text/javascript" src="js/modernizr-1.5.min.js"></script>
+	<script type="text/javascript" language="JavaScript">
+  
+	$(document).ready(function(){
+		 $( "#dialog" ).dialog({
+			 	autoOpen: false,
+		        resizable: false,
+		        height: "auto",
+		        width: 400,
+		        modal: true,
+		        buttons: {
+		          "OK": function() {
+		            $( this ).dialog( "close" );
+		          },
+		          "Cancel": function() {
+		            $( this ).dialog( "close" );
+		          }
+		        }
+		      });
+		
+		
+		$("#getaccounts").click(function(){
+			$.ajax({
+				type: "get",
+				async: "true",
+				url: "GetAccounts",
+				success: function(response){
+					console.log(response);
+					alert("OK");					
+				},
+				error: function(e){
+					alert(JSON.stringify(e));
+				}
+			}); //ajax
+		}); //onClick
+		
+		$("#getNIN").click(function(){
+			$.ajax({
+				type: "get",
+				async: "true",
+				url: "GetNIN",
+				success: function(response){
+					console.log(response);
+					alert("OK");					
+				},
+				error: function(e){
+					alert(JSON.stringify(e));
+				}
+			}); //ajax
+		}); //onClick
+		
+		$("#getduznici").click(function(){
+			$('#here_table').html("");
+			$.ajax({
+				type: "get",
+				async: "false",
+				url: "GetDuznici",
+				success: function(response){
+					var content = "<table width='100%' border='1'>";
+					content += "<tr><th>Naziv komitenta</th><th>Dugovanje</th></tr>";
+					$.each(response, function(id, object){
+						content += "<tr>";
+						content += "<td>" + (object.naziv == null ? " " : object.naziv) +  "</td>";
+						content += "<td align='right'>" + (object.iznos == null ? " " : object.iznos.toFixed(2)) +  "</td>";
+						content += "</tr>";
+					});
+					content += "</table>";
+					
+					$('#here_table').append(content);
+				},
+				error: function(e){
+					alert(JSON.stringify(e));
+				}
+			});//ajax
+		});//onClick
+		
+		$("#parsebasicdata").click(function(){
+			$.ajax({
+				type: "get",
+				async: "true",
+				dataType: "json",
+				data: {action: "0"},
+				url: "UpdateBasicDataAndInvoices",
+				success: function(response){
+					console.log(response);			
+				},
+				error: function(e){
+					alert(JSON.stringify(e));
+				}
+			}); //ajax
+		}); //onClick
+		
+		$("#parseinvoices").click(function(){
+			$.ajax({
+				type: "get",
+				async: "true",
+				dataType: "json",
+				data: {action: "1"},
+				url: "UpdateBasicDataAndInvoices",
+				success: function(response){
+					console.log(response);			
+				},
+				error: function(e){
+					alert(JSON.stringify(e));
+				}
+			}); //ajax
+		}); //onClick
+		
+		$("#parseizvod").click(function(){
+			$.ajax({
+				type: "get",
+				async: "true",
+				url: "ParseIzvod",
+				success: function(response){
+					console.log(response);			
+				},
+				error: function(e){
+					alert(JSON.stringify(e));
+				}
+			}); //ajax
+		}); //onClick
+		
+		
+		
+	}); //docReady
+	
+	
+  
+</script>
+  
+</head>
+
+<body>
+  <div id="main">
+    
+	<header>
+	
+	  
+	  <div id="welcome">
+	    <h2>Filteri <span>Mikron</span></h2>
+	  </div><!--close welcome-->			  	
+	
+	  <nav>
+	    <div id="menubar">
+          <ul id="nav">
+            <li><a href="index.html">Nov komitent</a></li>
+            <li><a href="izmenaKomitenta.html">Izmena komitenata</a></li>
+            <li><a href="kartice.html">Kartice</a></li>
+            <li  class="current"><a href="administracija.html">Administracija</a></li>
+            <li><a href="statistika.html">Statistika</a>
+          </ul>
+        </div><!--close menubar-->	
+      </nav>	
+	
+	</header>    
+	
+	<div id="site_content">		
+
+      <div class="slideshow">
+	    <ul class="slideshow">
+          <li class="show"><img width="680" height="300" src="images/9.jpg" alt="Filteri za građevinsku industriju i teretne mašine." /></li>
+          <li><img width="680" height="300" src="images/7.jpg" alt="Filteri hidraulike." /></li>
+          <li><img width="680" height="300" src="images/10.jpg" alt="Separatori ulja, uljnih para i vlage. Separatori vijčanih kompresora." /></li>
+          <li ><img width="680" height="300" src="images/4.jpg" alt="Filteri za tešku industriju." /></li>
+          <li><img width="680" height="300" src="images/5.jpg" alt="Filteri za hemijsku industriju." /></li>
+          <li><img width="680" height="300" src="images/6.jpg" alt="Filteri za prehrambenu industriju." /></li>
+          <li><img width="680" height="300" src="images/8.jpg" alt="Najkvalitetniji filtrirajući materijali poznatih svetskih proizvođača." /></li>
+          
+        </ul> 
+	  </div><!--close slideshow-->	
+	  
+	   
+	
+	  <div class="sidebar_container">       
+	  </div>
+	  <div id="content">
+	  <div class="content_item">
+	
+	
+
+	<div class="content_item">	
+		
+		<label></label><br/>
+	 	<button id="getaccounts">Dovuci racune sa NBS za sve komitente:</button><br/><br/>
+	 	
+	 	<button id="getNIN">Dovuci maticne brojeve sa NBS za sve komitente:</button><br/><br/>
+	 	
+	 	<button id="parsebasicdata">Obradi nove komitente</button><br/><br/>
+	 	
+	 	<button id="parseinvoices">Obradi nove fakture</button><br/><br/>
+	 	
+	 	<button id="parseizvod">Obradi izvodee</button><br/><br/>
+	 	
+	 	
+	<div  id="dialog" title="Basic dialog">
+ 			<p>Uspeh</p>
+	</div>
+		
+
+	</div>
+	<!--close content_imagetext-->
+
+</div>
+<!--close content_item-->
+      </div>
+	
+	</div>  	
+  
+    <footer>
+<!-- 	  <a href="index.html">Home</a> | <a href="ourwork.html">Our Work</a> | <a href="testimonials.html">Testimonials</a> | <a href="projects.html">Projects</a> | <a href="contact.html">Contact</a><br/><br/> -->
+<!-- 	  <a href="http://fotogrph.com">Images</a> |  website template by <a href="http://www.freehtml5templates.co.uk">Free HTML5 Templates</a> -->
+    </footer> 
+  
+  </div><!--close main-->
+  
+ 
+<!--   <script type="text/javascript" src="js/main.js"></script> -->
+</body>
+</html>

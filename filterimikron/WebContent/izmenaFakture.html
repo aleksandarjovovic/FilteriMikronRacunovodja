@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Računovodja/Nova faktura</title>
+    <!-- Core CSS - Include with every page -->
+    <link href="assets/plugins/bootstrap/bootstrap.css" rel="stylesheet" />
+    <link href="assets/font-awesome/css/font-awesome.css" rel="stylesheet" />
+    <link href="assets/plugins/pace/pace-theme-big-counter.css" rel="stylesheet" />
+    <link href="assets/css/style.css" rel="stylesheet" />
+    <link href="assets/css/main-style.css" rel="stylesheet" />
+    <!-- Page-Level CSS -->
+    <link href="assets/plugins/morris/morris-0.4.3.min.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="css/jquery-ui.min.css" />
+    
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/jquery-ui.min.js"></script>
+    <script src="assets/plugins/dataTables/jquery.dataTables.js"></script>
+    <script src="assets/plugins/dataTables/dataTables.bootstrap.js"></script>
+    
+    <script type="text/javascript" language="JavaScript">
+  
+    $(document).ready(function(){	
+//     	$("#basicData").hide();
+//     	$("#stavke").hide();
+		var formRow ='<div class="form-row">';
+		formRow += '<div class="col-md-4"><input  type="text"  class="form-control" name="nazivProizvoda[]" placeholder="Naziv proizvoda"></input></div>';
+		formRow += '<div class="col-md-3"><input  type="text" class="form-control col-md-2" name="sifraProizvoda[]" placeholder="Šifra proizvoda"></input></div>';
+		formRow += '<div class="col-md-1"><input  type="number" class="form-control col-md-2" name="kolicina[]" placeholder="kol."></input></div>';
+		formRow += '<div class="col-md-2"><input  type="number" class="form-control" name="cena[]" placeholder="Cena"></input></div>';
+		formRow += '<div class="col-md-2  "><input  type="number" class="form-control" name="ukupnoStavka[]" placeholder="Ukupno" style="align:right"></input></div>';
+		formRow += '</div><br>';
+		    
+		var availableTags = [
+	      "lično",
+	      "AKS Express",
+	      "D Expres",
+	      "City Express",
+	      "Royal Express",
+	      "Post Express"
+	    ];
+	    $( "#nacinOtpreme" ).autocomplete({
+	        source: availableTags
+	      });
+		$("#datumPrometa").datepicker({ dateFormat: 'dd.mm.yy' }).datepicker("setDate", new Date());
+		$("#valuta").datepicker({ dateFormat: 'dd.mm.yy' });
+		$("#datumFakture").datepicker({ dateFormat: 'dd.mm.yy' }).datepicker("setDate", new Date()).on("change", function(){
+			$("#datumPrometa").datepicker("setDate", $("#datumFakture").datepicker().val());
+		});
+		
+		for(var i=0; i<4;i++){
+			$("#formaStavke").append(formRow);
+		}
+		
+		
+		var kolicinaArr = $('input[name="kolicina[]"]');
+		var cenaArr = $('input[name="cena[]"]');
+		var ukupnoStavkaArr = $('input[name="ukupnoStavka[]"]');
+		
+		
+		$(ukupnoStavkaArr).each(function(i,e){
+			$(this).change(function(){
+				var zbir=0;
+				for(var j=0;j<ukupnoStavkaArr.length;j++){
+					if(!isNaN(parseFloat($(ukupnoStavkaArr[j]).val())))
+						zbir += parseFloat($(ukupnoStavkaArr[j]).val());
+				}
+				$("#ukupnoBezPDV").val(zbir.toFixed(2));
+				$("#ukupnoPDV").val((zbir*0.2).toFixed(2));
+				$("#svega").val((zbir*1.2).toFixed(2));
+			});
+		});
+		$(kolicinaArr).each(function(i,e){
+			$(this).change(function(){
+				$(ukupnoStavkaArr[i]).val($(this).val() * $(cenaArr[i]).val());
+				$(ukupnoStavkaArr[i]).change();
+			});
+		});
+		$(cenaArr).each(function(i,e){
+			$(this).change(function(){
+				$(this).val(parseFloat($(this).val()).toFixed(2));
+				$(ukupnoStavkaArr[i]).val(parseFloat($(this).val() * $(kolicinaArr[i]).val()));
+				$(ukupnoStavkaArr[i]).change();
+			});
+		});
+		
+		$.ajax({
+			type: "get",
+			dataType: "json",
+			async: "false",
+			url: "GetFakturaKomitent",
+			success: function(response){
+				var $select = $("#faktureSelect");
+				$select.find("option").remove();
+				$.each(response, function(key, value){
+					$select.append($("<option/>").val(key).text(value));
+				});
+			},
+			error: function (){
+				alert("Greska pri dohvatanju faktura");
+			}
+		});
+    	
+    	$.ajax({
+			type: "get",
+			dataType: "json",
+			async: "false",
+			url: "GetPoslednjiBrojFakture",
+			success: function(response){
+				console.log(response);
+				$("#brojFakture").val(response.brojFakture);
+			},
+			error: function (){
+				alert("Greska");
+			}
+		});
+    	
+    	$("#getInvoiceDataFromDB").click(function(){
+			var id = $("#faktureSelect").val();	
+			$("#idFaktura").val(id);
+			$.ajax({
+				type: "get",
+				dataType: "json",
+				data: {id: id},
+				async: "false",
+				url: "GetFakturaAllData",
+				success: function(response){
+					
+					$("#brojFakture").val(response.brojfakture);
+					$("#datumFakture").val(response.datum);
+					$("#datumPrometa").val(response.datumotpreme);
+					$("#ukupnoBezPDV").val(response.iznos);
+					$("#nacinOtpreme").val(response.nacinotpreme);
+					$("#valuta").val(response.valuta);
+					$("#brUgovora").val(response.brojugovora);
+					
+					
+					
+					
+					
+					$("#naziv").html(response.naziv);
+					$("#pib").html(response.pib);
+					$("#adresaSedista").html(response.adresaSedista);
+					$("#adresaIsporuke").html(response.adresaIsporuke);
+					$("#telefon").html(response.telefon);
+					$("#email").html(response.email);
+					$("#direktorijum").val(response.direktorijum);
+				},
+				error: function (){
+					alert("Greska");
+				}
+			});
+		});	
+    	
+    	$("#addStavkaBtn").click(function(){
+    		$("#formaStavke").append(formRow);
+    		
+    		var kolLast = $('input[name="kolicina[]"]').last();
+    		var cenaLast = $('input[name="cena[]"]').last();
+    		var ukupnoStavkaLast = $('input[name="ukupnoStavka[]"]').last();
+    		
+    		$(ukupnoStavkaLast).change(function(){
+    			var zbir=0;
+				for(var j=0;j<ukupnoStavkaArr.length;j++){
+					if(!isNaN(parseFloat($(ukupnoStavkaArr[j]).val())))
+						zbir += parseFloat($(ukupnoStavkaArr[j]).val());
+				}
+				$("#ukupnoBezPDV").val(zbir.toFixed(2));
+				$("#ukupnoPDV").val((zbir*0.2).toFixed(2));
+				$("#svega").val((zbir*1.2).toFixed(2));
+    		});
+    		
+    		$(kolLast).change(function(){
+    			$(ukupnoStavkaLast).val($(this).val() * $(cenaLast).val());
+				$(ukupnoStavkaLast).change();
+    		});
+    		
+    		$(cenaLast).change(function(){
+				$(cenaLast).val(parseFloat($(this).val()*1.0).toFixed(2));
+				$(ukupnoStavkaLast).val($(this).val() * $(kolLast).val());
+				$(ukupnoStavkaLast).change();
+			});
+    		
+    		kolicinaArr.push(kolLast);
+    		cenaArr.push(cenaLast);
+    		ukupnoStavkaArr.push(ukupnoStavkaLast);
+    	});
+    	
+    	$("#saveFaktura").click(function(){
+    		var idkomitenti = $("#idKomitenti").val();
+    		var direktorijum = $("#direktorijum").val();
+    		var brojFakture = $("#brojFakture").val();
+    		var datumFakture = $("#datumFakture").val();
+    		var datumPrometa = $("#datumPrometa").val();
+    		var nacinOtpreme = $("#nacinOtpreme").val();
+    		var valuta = $("#valuta").val();
+    		var placenoAvansno = $("#placenoAvansno").is(':checked');
+    		var brUgovora = $("#brUgovora").val();
+    		var svega = $("#svega").val();
+    		var slovima = $("#slovima").val();
+    		
+    		    		
+    		var arrayStavke = [];
+    		
+    		var nazivProizvodaArr = $('input[name="nazivProizvoda[]"]');
+    		var sifraProizvodaArr = $('input[name="sifraProizvoda[]"]');
+    		var kolicinaArr = $('input[name="kolicina[]"]');
+    		var cenaArr = $('input[name="cena[]"]');
+    		var ukupnoStavkaArr = $('input[name="ukupnoStavka[]"]');
+    		
+    		for(var k=0;k<nazivProizvodaArr.length;k++){
+    			if(!isNaN(parseFloat($(kolicinaArr[k]).val())) && !isNaN(parseFloat($(cenaArr[k]).val()))){
+    				var stavka = {
+		    						naziv:$(nazivProizvodaArr[k]).val(),
+		    						sifra:$(sifraProizvodaArr[k]).val(),
+		    						kolicina:$(kolicinaArr[k]).val(),
+		    						cena:$(cenaArr[k]).val(),
+		    						ukupno:$(ukupnoStavkaArr[k]).val()
+    							 }
+    				arrayStavke.push(stavka);
+    			}
+    		}
+    		
+    		$.ajax({
+				type: "get",
+				dataType: "json",
+				data : {
+					idkomitenti : idkomitenti,
+					direktorijum : direktorijum,
+					brojFakture : brojFakture,
+					datumFakture : datumFakture,
+					datumPrometa : datumPrometa,
+					nacinOtpreme : nacinOtpreme,
+					valuta : valuta,
+					placenoAvansno : placenoAvansno,
+					brUgovora : brUgovora,
+					svega : svega,
+					slovima : slovima,
+					stavke : JSON.stringify(arrayStavke)
+				},
+				async : "false",
+				url : "SaveFaktura",
+				success : function(
+						response) {
+
+				},
+				error : function() {
+					alert("Greska");
+				}
+			});
+
+			$('#myModal')
+					.modal(
+							'show');
+		});
+
+		}); //docReady
+	</script>
+   </head>
+<body>
+	<input type="hidden" id="idKomitenti" ></input>
+	<input type="hidden" id="direktorijum" ></input>
+    <!--  wrapper -->
+    <div id="wrapper">
+        <!-- navbar top -->
+        <nav class="navbar navbar-default navbar-fixed-top" role="navigation" id="navbar">
+            <!-- navbar-header -->
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".sidebar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="index.html">
+                    <img src="assets/img/logo.png" alt="" />
+                </a>
+            </div>
+            <!-- end navbar-header -->
+            <!-- navbar-top-links -->
+            <ul class="nav navbar-top-links navbar-right">
+                <!-- main dropdown -->
+                <li class="dropdown">
+                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                        <i class="fa fa-user fa-3x"></i>
+                    </a>
+                    <!-- dropdown user-->
+                    <ul class="dropdown-menu dropdown-user">
+                        <li><a href="#"><i class="fa fa-user fa-fw"></i>User Profile</a>
+                        </li>
+                        <li><a href="#"><i class="fa fa-gear fa-fw"></i>Settings</a>
+                        </li>
+                        <li class="divider"></li>
+                        <li><a href="login.html"><i class="fa fa-sign-out fa-fw"></i>Logout</a>
+                        </li>
+                    </ul>
+                    <!-- end dropdown-user -->
+                </li>
+                <!-- end main dropdown -->
+            </ul>
+            <!-- end navbar-top-links -->
+
+        </nav>
+        <!-- end navbar top -->
+
+        <!-- navbar side -->
+        <nav class="navbar-default navbar-static-side" role="navigation">
+            <!-- sidebar-collapse -->
+            <div class="sidebar-collapse">
+                <!-- side-menu -->
+                <ul class="nav" id="side-menu">
+                    <li>
+                        <!-- user image section-->
+                        <div class="user-section">
+                            <div class="user-section-inner">
+                                <img src="assets/img/user.jpg" alt="">
+                            </div>
+                            <div class="user-info">
+                                <div><strong>aca</strong></div>
+                                <div class="user-text-online">
+                                    <span class="user-circle-online btn btn-success btn-circle "></span>&nbsp;Online
+                                </div>
+                            </div>
+                        </div>
+                        <!--end user image section-->
+                    </li>
+                    <li class="sidebar-search">
+						<!--search section -->
+                        <div class="input-group custom-search-form">
+                            <input type="text" class="form-control" placeholder="Search...">
+                            <span class="input-group-btn">
+                                <button class="btn btn-default" type="button">
+                                    <i class="fa fa-search"></i>
+                                </button>
+                            </span>
+                        </div>
+					<!--end search section -->
+                    </li>
+                    <li>
+                        <a href="index.html"><i class="fa fa-dashboard fa-fw"></i>Početna strana</a>
+                    </li>
+                    <li>
+                        <a href="#"><i class="fa fa-bar-chart-o fa-fw"></i> Komitenti<span class="fa arrow"></span></a>
+                        <ul class="nav nav-second-level">
+                            <li>
+                                <a href="novKomitent.html">Nov Komitent</a>
+                            </li>
+                            <li>
+                                <a href="izmenaKomitenta.html">Izmena komitenta</a>
+                            </li>
+                             <li>
+                                <a href="kartice.html">Kartice komitenata</a>
+                            </li>
+                        </ul>
+                        <!-- second-level-items -->
+                    </li>
+                     <li class="active">
+                        <a href="#"><i class="fa fa-bar-chart-o fa-fw"></i> Fakture<span class="fa arrow"></span></a>
+                        <ul class="nav nav-second-level">
+                            <li class="selected">
+                                <a href="novaFaktura.html">Nova faktura</a>
+                            </li>
+                            <li>
+                                <a href="izmenaFakture.html">Izmena fakture</a>
+                            </li>
+                             <li>
+                                <a href="brisanjeFakture.html">Brisanje fakture</a>
+                            </li>
+                        </ul>
+                        <!-- second-level-items -->
+                    </li>
+                     <li>
+                        <a href="administracija.html"><i class="fa fa-flask fa-fw"></i>Administracija</a>
+                    </li>
+                    <li>
+                        <a href="statistika.html"><i class="fa fa-table fa-fw"></i>Statistika</a>
+                    </li>
+                </ul>
+                <!-- end side-menu -->
+            </div>
+            <!-- end sidebar-collapse -->
+        </nav>
+        <!-- end navbar side -->
+        <!--  page-wrapper -->
+        
+        
+        <!-- OVO JE SADRZAJ STRANICE -->
+        <div id="page-wrapper">
+        
+            <div class="row">
+                <!-- Page Header -->
+                <div class="col-lg-12">
+                    <h1 class="page-header">Izmena Fakture</h1>
+                </div>
+                <!--End Page Header -->
+            </div>
+            
+            <div class="row">
+            	<div class="col-lg-12">
+            		<div class="panel panel-default">
+            			<div class="panel-heading">
+                            Odabir fakture
+                        </div>
+                        <div class="panel-body">
+                        	<div class="row">
+                            	<div class="col-lg-6">
+                                	<form role="form">
+                                		<div class="form-group">
+                                            <div class="form-group">
+                                            <label>Učitaj fakturu</label>
+                                            <select class="form-control" id="faktureSelect">
+                                                <option value=""></option>
+                                            </select>
+                                        </div>
+                                        </div>
+                                        <button type="button" class="btn btn-primary" id="getInvoiceDataFromDB">Učitaj fakturu iz Baze podataka</button><br/><br/>
+                                	</form>
+                               	</div>
+                           	</div>
+                        </div>
+            		</div>
+            	</div>
+            </div>
+            
+            <div class="row" id="basicData">
+            	<div class="col-lg-6">
+            		<div class="panel panel-info">
+            			<div class="panel-heading">
+                            Osnovni podaci o komitentu
+                        </div>
+                       	<div class="panel-body">
+                       	
+                       	<div class="row">
+                            	<div class="col-lg-12">
+                       		<span class="col-md-3">NAZIV:&nbsp;</span><label id="naziv" class="col-md-offset-1 "></label><br>
+	 						<span class="col-md-3">Adresa:&nbsp;</span><label id="adresaSedista" class="col-md-offset-1 "></label><br>
+	 						<span class="col-md-3">Adresa isporuke:&nbsp;</span><label id="adresaIsporuke" class="col-md-offset-1"></label><br>
+	 						<span class="col-md-3">PIB:&nbsp;</span><label id="pib" class="col-md-offset-1"></label><br>
+	 						<span class="col-md-3">Telefon:&nbsp;</span><label id="telefon" class="col-md-offset-1 "></label><br>
+	 						<span class="col-md-3">E-mail:&nbsp;</span><label id="email" class="col-md-offset-1 "></label><br>
+	 						</div>
+	 						</div>
+                       	</div>
+                     </div>
+           		</div>
+           		<div class="col-lg-6">
+            		<div class="panel panel-primary">
+            			<div class="panel-heading">
+                            Osnovni podaci o fakturi
+                        </div>
+                       	<div class="panel-body">
+                       	<div class="row">
+                            	<div class="col-lg-12">
+                                	<form role="form">
+                                		<div class="form-inline">
+			                       			<label class="col-md-4">Broj fakture:&nbsp;</label>
+			                       			<input class="form-control  col-md-offset-1" id="brojFakture"></input>
+			                       		</div>
+			                       		<div class="form-inline">
+				 							<label class="col-md-4">Datum:&nbsp;</label>
+				 							<input class="form-control  col-md-offset-1" id="datumFakture"></input>
+				 						</div>
+			                       		<div class="form-inline">
+				 							<label class="col-md-4">Datum prometa:&nbsp;</label>
+				 							<input class="form-control col-md-offset-1" id="datumPrometa"></input>
+				 						</div>
+			                       		<div class="form-inline">
+				 							<label class="col-md-4">Način otpreme:&nbsp;</label>
+				 							<input class="form-control  col-md-offset-1"  id="nacinOtpreme"></input>
+				 						</div>
+			                       		<div class="form-inline">
+				 							<label class="col-md-4">Rok plaćanja:&nbsp;</label>
+				 							<input class="form-control col-md-offset-1"  id="valuta"></input>
+				 							 <label class="checkbox-inline">
+                                                <input type="checkbox" value="true"  id="placenoAvansno">plaćeno avansno
+                                            </label>
+				 						</div>
+			                       		<div class="form-inline">
+				 							<label class="col-md-4">Broj porudžbenice/ugovora:&nbsp;</label>
+				 							<input class="form-control col-md-offset-1"  id="brUgovora"></input>
+				 						</div>
+	 								</form>
+	 							</div>
+	 						</div>
+                       	</div>
+                     </div>
+           		</div>
+           	</div>
+         
+
+            <div class="row" id="stavke">
+            	<div class="col-lg-12">
+            		<div class="panel panel-danger">
+            			<div class="panel-heading">
+                            Stavke
+                        </div>
+                        <div class="panel-body">
+                        	<div class="row">
+                        		<div class="col-lg-12">
+                                	<form role="form" id="formaStavke">
+                                		<div class="form-row">
+                                			<div class="col-md-4">
+		                                		<input  type="text"  class="form-control" name="nazivProizvoda[]" placeholder="Naziv proizvoda"></input>
+		                                	</div>
+		                                	<div class="col-md-3">
+		                                		<input  type="text" class="form-control col-md-2" name="sifraProizvoda[]" placeholder="Šifra proizvoda"></input>
+		                                	</div>
+		                                	<div class="col-md-1">	
+		                                		<input  type="number" class="form-control col-md-2" name="kolicina[]" placeholder="kol."></input>
+		                                	</div>
+		                                	<div class="col-md-2">	
+			                                	<input  type="number" class="form-control" name="cena[]" placeholder="Cena"></input>
+		                                	</div>
+		                                	<div class="col-md-2  ">	
+		                                		<input  type="number" class="form-control" name="ukupnoStavka[]" placeholder="Ukupno" style="align:right"></input>
+	                                		</div>
+	                                		
+                                		</div><br>
+                               		</form>
+                           		</div>
+                        	</div>
+                        	<br>
+                        	
+                        	<div class="row">
+                        		<div class="col-lg-6">
+                                	<button type="button" class="btn btn-primary" id="addStavkaBtn">Dodaj stavku</button>
+                           		</div>
+                        	</div>
+                        	<br>
+                        	<div class="row">
+                        		<div class="col-lg-12">
+                        			<div class="form-inline">	
+                        				<label class="col-md-2 col-md-offset-8">Ukupno bez PDV:&nbsp;</label>
+                                		<input  class="form-control col-md-2" id="ukupnoBezPDV" placeholder="Ukupno bez PDV" ></input>
+                                	</div>
+                           		</div>
+                        	</div>
+                        	<div class="row">
+                        		<div class="col-lg-12">
+                        			<div class="form-inline">	
+                        				<label class="col-md-2 col-md-offset-8">PDV 20%:&nbsp;</label>
+                                		<input  class="form-control col-md-2" id="ukupnoPDV" placeholder="PDV" ></input>
+                                	</div>
+                           		</div>
+                        	</div>
+                        	<div class="row">
+                        		<div class="col-lg-12">
+                        			<div class="form-inline">	
+                        				<label class="col-md-2 col-md-offset-8">UKUPNO ZA UPLATU:&nbsp;</label>
+                                		<input  class="form-control col-md-2" id="svega" placeholder="Svega" ></input>
+                                	</div>
+                           		</div>
+                        	</div>
+                        	<br>
+                        	<div class="row">
+                        		<div class="col-lg-12">
+                                		<div class="form-row">
+                                			<div class="col-md-6 col-md-offset-6">
+		                                		<input  type="text" id="slovima"  class="form-control" name="slovima" placeholder="Slovima"></input>
+		                                	</div>
+		                                </div>
+                                	
+                           		</div>
+                        	</div>
+                        	<br>
+                        	<div class="row">
+                        		<div class="col-lg-4">
+                        			<div class="form-inline">	
+                                		<button type="button" class="btn btn-success" id="saveFaktura">Sačuvaj fakturu</button>
+                                	</div>
+                           		</div>
+                        	</div>
+                        </div>
+            		</div>
+            	</div>
+            </div>
+            
+            
+<!--             MODAL WINDOW -->
+			<div class="modal fade" id="myModal" tabindex="-1" role="dialog"
+				aria-labelledby="myModalLabel" aria-hidden="true">
+				<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal"
+								aria-hidden="true">&times;</button>
+							<h4 class="modal-title" id="myModalLabel">Uspeh!</h4>
+						</div>
+						<div class="modal-body">Uspešno ste sačuvali fakturu u bazi podataka!</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-primary"
+								data-dismiss="modal" onclick="javascript:window.location.reload(true)">Zatvori</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</div>
+        <!-- end page-wrapper -->
+
+    </div>
+    <!-- end wrapper -->
+
+    <!-- Core Scripts - Include with every page -->
+<!--     <script src="assets/plugins/jquery-1.10.2.js"></script> -->
+    <script src="assets/plugins/bootstrap/bootstrap.min.js"></script>
+    <script src="assets/plugins/metisMenu/jquery.metisMenu.js"></script>
+    <script src="assets/plugins/pace/pace.js"></script>
+    <script src="assets/scripts/siminta.js"></script>
+    <!-- Page-Level Plugin Scripts-->
+<!--     <script src="assets/plugins/morris/raphael-2.1.0.min.js"></script> -->
+<!--     <script src="assets/plugins/morris/morris.js"></script> -->
+<!--     <script src="assets/scripts/dashboard-demo.js"></script> -->
+
+</body>
+
+</html>
